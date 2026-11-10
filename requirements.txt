@@ -1,0 +1,10 @@
+# Dependencias de ejecución
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+oracledb==26.1.0
+pydantic-settings==2.16.2
+limits==5.8.0
+PyJWT==2.15.1
+bcrypt==5.0.0
+python-multipart==0.0.33
+JPype1==1.7.1

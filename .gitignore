@@ -1,0 +1,46 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.crt
+
+# Usuarios de la API (hashes de contraseñas)
+users.json
+.users-*.tmp
+
+# Environments de Postman con claves reales (la colección sí se versiona)
+postman/*.postman_environment.json
+
+# Entorno virtual y Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Herramientas
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+*.log
+
+# Oracle Instant Client (no versionar binarios)
+instantclient*/
+
+# Editores / SO
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Drivers binarios (ojdbc8.jar): se descargan, no se versionan
+lib/*.jar

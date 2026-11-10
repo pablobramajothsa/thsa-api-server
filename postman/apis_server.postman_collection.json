@@ -1,0 +1,1317 @@
+{
+  "info": {
+    "name": "apis_server - API de vistas Oracle",
+    "description": "Colección de prueba de la API local.\n\n1. Importar también el environment `postman/local.postman_environment.json` y seleccionarlo.\n2. Levantar la API con `run_local.bat`.\n\nEl login es automático: cada request pide un token si no hay uno vigente.\n\nSin Oracle disponible, los listados y detalles responden 500 genérico: los tests lo aceptan y verifican que no se filtre información interna. Rate limit por defecto: 60 requests/minuto por IP y 10 logins/minuto.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Login automático: obtiene un token si no hay uno o si vence en menos de 30 s.",
+          "// No corre en el propio login ni en los requests marcados \"No Auth\".",
+          "const isLogin = pm.request.url.getPath().endsWith(\"/v1/auth/token\");",
+          "const isNoAuth = pm.request.auth && pm.request.auth.type === \"noauth\";",
+          "const expires = Number(pm.environment.get(\"accessTokenExpires\") || 0);",
+          "if (!isLogin && !isNoAuth && (!pm.environment.get(\"accessToken\") || Date.now() > expires - 30000)) {",
+          "    pm.sendRequest({",
+          "        url: pm.environment.get(\"baseUrl\") + \"/v1/auth/token\",",
+          "        method: \"POST\",",
+          "        header: { \"Content-Type\": \"application/x-www-form-urlencoded\" },",
+          "        body: {",
+          "            mode: \"urlencoded\",",
+          "            urlencoded: [",
+          "                { key: \"username\", value: pm.environment.get(\"username\") },",
+          "                { key: \"password\", value: pm.environment.get(\"password\") },",
+          "            ],",
+          "        },",
+          "    }, (err, res) => {",
+          "        if (!err && res.code === 200) {",
+          "            const b = res.json();",
+          "            pm.environment.set(\"accessToken\", b.access_token);",
+          "            pm.environment.set(\"accessTokenExpires\", String(Date.now() + b.expires_in * 1000));",
+          "        } else {",
+          "            console.warn(\"Login automático falló\", err || res.code);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"No filtra mensajes ORA-\", () => pm.expect(pm.response.text()).to.not.include(\"ORA-\"));",
+          "pm.test(\"Incluye X-Request-ID\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+          "pm.test(\"Header X-Content-Type-Options: nosniff\", () =>",
+          "    pm.expect(pm.response.headers.get(\"X-Content-Type-Options\")).to.eql(\"nosniff\"));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Sin autenticación. Ejecuta SELECT 1 FROM DUAL.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 ok o 503 unavailable\", () => {",
+                  "    const b = pm.response.json();",
+                  "    if (pm.response.code === 200) pm.expect(b).to.eql({status: \"ok\"});",
+                  "    else { pm.expect(pm.response.code).to.eql(503); pm.expect(b).to.eql({status: \"unavailable\"}); }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login (obtener token)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "token"
+              ]
+            },
+            "description": "Guarda el token en el environment (accessToken). Los demás requests lo usan solos.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"Devuelve access_token bearer\", () => {",
+                  "    pm.expect(b.token_type).to.eql(\"bearer\");",
+                  "    pm.expect(b.access_token).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(b.expires_in).to.be.above(0);",
+                  "});",
+                  "pm.environment.set(\"accessToken\", b.access_token);",
+                  "pm.environment.set(\"accessTokenExpires\", String(Date.now() + b.expires_in * 1000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con contraseña incorrecta → 401",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "token"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "contraseña-incorrecta",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.expect([401]).to.include(pm.response.code));",
+                  "pm.test(\"Body {\"detail\": \"Unauthorized\"}\", () => pm.expect(pm.response.json()).to.eql({\"detail\": \"Unauthorized\"}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con usuario inexistente → 401",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "token"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "usuario-que-no-existe",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "lo-que-sea-123",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.expect([401]).to.include(pm.response.code));",
+                  "pm.test(\"Body {\"detail\": \"Unauthorized\"}\", () => pm.expect(pm.response.json()).to.eql({\"detail\": \"Unauthorized\"}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin token → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.expect([401]).to.include(pm.response.code));",
+                  "pm.test(\"Body {\"detail\": \"Unauthorized\"}\", () => pm.expect(pm.response.json()).to.eql({\"detail\": \"Unauthorized\"}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token inválido → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "token-invalido",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.expect([401]).to.include(pm.response.code));",
+                  "pm.test(\"Body {\"detail\": \"Unauthorized\"}\", () => pm.expect(pm.response.json()).to.eql({\"detail\": \"Unauthorized\"}));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Campos (SYSADMIN.IA_CAMPOS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos?page=2&limit=10&sort=productor_nombre&order=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "productor_nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=2 y limit=10\", () => { pm.expect(b.page).to.eql(2); pm.expect(b.limit).to.eql(10); });",
+                  "    pm.test(\"data tiene como máximo 10 registros\", () => pm.expect(b.data.length).to.be.at.most(10));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtro por productor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos?productor_codigo=228",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos"
+              ],
+              "query": [
+                {
+                  "key": "productor_codigo",
+                  "value": "228"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtro por localidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos?localidad=JUNIN",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos"
+              ],
+              "query": [
+                {
+                  "key": "localidad",
+                  "value": "JUNIN"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle (todas las filas del campo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos/102516",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos",
+                "102516"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 o 404 o 500\", () => pm.expect([200, 404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos?sort=productor_cuit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "productor_cuit"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Listado (default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?page=2&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=2 y limit=5\", () => { pm.expect(b.page).to.eql(2); pm.expect(b.limit).to.eql(5); });",
+                  "    pm.test(\"data tiene como máximo 5 registros\", () => pm.expect(b.data.length).to.be.at.most(5));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?categoria=FERRETERIA&fecha_desde=2024-01-01&fecha_hasta=2024-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "categoria",
+                  "value": "FERRETERIA"
+                },
+                {
+                  "key": "fecha_desde",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": "2024-12-31"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado ordenado por precio desc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?sort=precio&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "precio"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 o 404 o 500\", () => pm.expect([200, 404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos",
+                "999999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/clientes?sort=razon_social",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "razon_social"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"page=1 y limit=20\", () => { pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(20); });",
+                  "    pm.test(\"data tiene como máximo 20 registros\", () => pm.expect(b.data.length).to.be.at.most(20));",
+                  "} else {",
+                  "    pm.test(\"500 sin detalles y con request_id\", () => {",
+                  "        const b = pm.response.json();",
+                  "        pm.expect(b.detail).to.eql(\"Internal server error\");",
+                  "        pm.expect(b.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\"));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/clientes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "clientes",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 o 404 o 500\", () => pm.expect([200, 404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validaciones (422)",
+      "item": [
+        {
+          "name": "page=0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?page=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "limit=101",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?limit=101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "101"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "limit=0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?sort=password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "password"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "order inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?order=sideways",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "order",
+                  "value": "sideways"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fechas invertidas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?fecha_desde=2024-12-31&fecha_hasta=2024-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "fecha_desde",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": "2024-01-01"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fecha con formato inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos?fecha_desde=31-12-2024",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "fecha_desde",
+                  "value": "31-12-2024"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "id no numérico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos",
+                "abc"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "id cero",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productos/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productos",
+                "0"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.expect([422]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
