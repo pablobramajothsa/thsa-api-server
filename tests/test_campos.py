@@ -14,7 +14,20 @@ FILA = {
     "productor_codigo": "P001",
     "productor_nombre": "PRODUCTOR UNO",
     "productor_cuit": "20-00000000-0",
+    "url": "https://ejemplo.local/campos/100009",
 }
+
+
+def test_url_se_consulta_y_se_devuelve(client, fake_db, auth):
+    fake_db.total = 2
+    fake_db.rows = [FILA, {**FILA, "productor_codigo": "P002", "url": None}]
+
+    response = client.get("/v1/campos", headers=auth)
+    sql, _ = fake_db.last("all")
+
+    assert response.status_code == 200
+    assert ", URL FROM" in sql
+    assert [r["url"] for r in response.json()["data"]] == [FILA["url"], None]
 
 
 def test_listado_formato_y_orden_deterministico(make_client, fake_db, auth):

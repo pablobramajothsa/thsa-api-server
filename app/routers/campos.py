@@ -3,7 +3,8 @@
 Estructura relevada:
     CAMPO_CODIGO NUMBER(7), CAMPO_NOMBRE VARCHAR2(50), DOMICILIO VARCHAR2(79),
     CODIGO_POSTAL VARCHAR2(42), CPO_LOCALIDAD VARCHAR2(50), KILOMETROS VARCHAR2(0),
-    PRODUCTOR_CODIGO VARCHAR2(10), PRODUCTOR_NOMBRE VARCHAR2(50), PRODUCTOR_CUIT VARCHAR2(14)
+    PRODUCTOR_CODIGO VARCHAR2(10), PRODUCTOR_NOMBRE VARCHAR2(50), PRODUCTOR_CUIT VARCHAR2(14),
+    URL VARCHAR2(2083) (agregada el 10/11/2026; puede venir vacía)
 
 CAMPO_CODIGO no es único: un campo puede estar asociado a varios productores. La fila se
 identifica por (CAMPO_CODIGO, PRODUCTOR_CODIGO), que se usa como desempate del orden. Por
@@ -41,6 +42,7 @@ SPEC = ViewSpec(
         "PRODUCTOR_CODIGO",
         "PRODUCTOR_NOMBRE",
         "PRODUCTOR_CUIT",
+        "URL",
     ),
     id_column="CAMPO_CODIGO",
     tiebreak_columns=("CAMPO_CODIGO", "PRODUCTOR_CODIGO"),
@@ -74,6 +76,7 @@ class Campo(BaseModel):
     productor_codigo: str | None = None
     productor_nombre: str | None = None
     productor_cuit: str | None = None
+    url: str | None = None
 
 
 MODEL = Campo

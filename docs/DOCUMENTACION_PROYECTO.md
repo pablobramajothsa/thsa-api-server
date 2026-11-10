@@ -175,6 +175,7 @@ Relevada con consultas de solo lectura sobre el diccionario de datos.
 | `PRODUCTOR_CODIGO` | VARCHAR2(10) | **Todas** las filas con espacios de relleno a la izquierda (ej. `"    228"`). |
 | `PRODUCTOR_NOMBRE` | VARCHAR2(50) | |
 | `PRODUCTOR_CUIT` | VARCHAR2(14) | Puede ser un dato personal (CUIT de persona física). |
+| `URL` | VARCHAR2(2083) | Agregada el 10/11/2026. Al agregarla, vacía en las 4334 filas. Se publica como `url` (texto, puede ser `null`); no se ordena ni se filtra por ella. |
 
 Decisiones derivadas:
 
