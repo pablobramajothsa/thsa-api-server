@@ -145,6 +145,18 @@ crea en el primer request que logre conectar.
 | `POST /v1/auth/token` | no | Login: recibe `username` y `password` y devuelve un token. |
 | `GET /v1/campos` | sí | Listado paginado de `SYSADMIN.IA_CAMPOS`. Filtros: `productor_codigo`, `productor_cuit`, `codigo_postal`, `localidad`. Orden: `campo_codigo`, `campo_nombre`, `cpo_localidad`, `productor_codigo`, `productor_nombre`. |
 | `GET /v1/campos/{campo_codigo}` | sí | Lista con todas las filas del campo (una por productor); 404 si no existe. |
+| `GET /v1/campos-plantas-distancias`, `/{campo_codigo}` | sí | `IA_CAMPOS_PLANTAS_DISTANCIAS`: kms de cada campo a cada planta. Filtro: `planta_codigo`. Detalle: lista. |
+| `GET /v1/campos-productores`, `/{campo_codigo}` | sí | `IA_CAMPOS_PRODUCTORES`. Filtros: `productor_codigo`, `productor_cuit`. Detalle: lista (una fila por productor). |
+| `GET /v1/catac` | sí | `IA_CATAC`: tarifas por tonelada. Filtros: `tarifa_codigo`, `kilometros`, `fecha_desde`/`fecha_hasta` (vigencia). Sin detalle. |
+| `GET /v1/choferes`, `/{codigo}` | sí | `IA_CHOFERES`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`, `pro_empresa_transporte`, `pro_patente_camion`. |
+| `GET /v1/choferes-activos`, `/{codigo}` | sí | `IA_CHOFERES_ACTIVOS`. Mismos filtros que choferes. |
+| `GET /v1/choferes-no-activos`, `/{codigo}` | sí | `IA_CHOFERES_NO_ACTIVOS`. Mismos filtros que choferes. |
+| `GET /v1/compras-pendientes-facturas` | sí | `IA_COMPRAS_PENDIENTES_FACTURAS`. Filtros: `hca_codigo`, `hca_sucursal`, `hca_numero`, `hcv_entidad`, `hca_articulo`, `fecha_desde`/`fecha_hasta`. Sin detalle. |
+| `GET /v1/compras-pendientes-ncnd` | sí | `IA_COMPRAS_PENDIENTES_NCND`. Mismos filtros que facturas. Sin detalle. |
+| `GET /v1/empresas-transporte`, `/{codigo}` | sí | `IA_EMPRESA_TRANSPORTE`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`. |
+| `GET /v1/impuestos-regimenes`, `/{rgi_codigo_regimen}` | sí | `IA_IMPUESTOS_REGIMENES`. Filtros: `rgi_codigo_impuesto`, `rgi_tipo_operacion`, `rgi_provincia`, `rgi_habilitado`. |
+| `GET /v1/plantas`, `/{pla_planta}` | sí | `IA_PLANTAS`. Filtros: `pla_inactivo`, `pla_codigo_postal`. |
+| `GET /v1/productores`, `/{codigo}` | sí | `IA_PRODUCTORES`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`. |
 | `GET /v1/productos` | sí | Listado paginado de `V_PRODUCTOS`. |
 | `GET /v1/productos/{id}` | sí | Detalle por id; 404 si no existe. |
 | `GET /v1/clientes` | sí | Listado paginado de `V_CLIENTES`. |
@@ -266,6 +278,11 @@ Si una vista está en un esquema distinto de `VIEW_SCHEMA`, se indica en `ViewSp
 
 Los `NUMBER` con decimales se devuelven como `float` en JSON. Si se necesita precisión exacta
 (por ejemplo, importes), conviene cambiar el modelo a `Decimal`, que se serializa como string.
+
+Los códigos de texto (`CODIGO` de choferes, productores y empresas) se usan tal cual en la
+URL del detalle: `/v1/productores/4904`. Los filtros de tipo Sí/No usan los valores de la
+vista, que no son uniformes: `Si`/`No` en choferes, productores y empresas; `Sí`/`No` (con
+acento) en plantas y regímenes. Cada parámetro lo indica en `/docs`.
 
 ## Base de datos
 

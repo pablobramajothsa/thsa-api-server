@@ -21,7 +21,7 @@ En Bash (Git Bash) usar `./.venv/Scripts/python.exe` y exportar `PYTHONIOENCODIN
 
 Seguir `docs/GUIA_NUEVA_API.md`. Resumen:
 
-1. `scripts/new_api.py <recurso> --view <VISTA> --from-db|--columns ... [--id --filter --trim --date-filter]`
+1. `scripts/new_api.py <recurso> --view <VISTA> --from-db|--columns ... [--id --key --sort --filter --trim --date-filter --detail-one|--detail-list|--no-detail]`
    genera `app/routers/<recurso>.py` + `tests/test_<recurso>.py` y lo registra en
    `VIEW_MODULES` (`app/routers/__init__.py`).
 2. Revisar el router: recortar `sort_columns`/`SortField`, filtros, `tiebreak_columns` si el
@@ -53,6 +53,10 @@ Seguir `docs/GUIA_NUEVA_API.md`. Resumen:
 - Interfaz `Database` (`app/db.py`): `fetch_all`, `fetch_one`, `scalar`, `close`. Binds con
   nombre `:x`; el backend JDBC los convierte a `?`.
 - Esquema: `ViewSpec.schema` (por vista) > `VIEW_SCHEMA` (.env) > sinónimos.
+- Ids de detalle: enteros o códigos de texto (`CODIGO VARCHAR2`, path con `pattern`).
+  Vistas sin id útil (CATAC, compras) no tienen detalle: se consultan con filtros.
+- Vistas en la base de prueba: `SYSADMIN.IA_*`; hallazgos de cada una en el docstring de
+  su router y en `docs/DOCUMENTACION_PROYECTO.md` (5.1).
 - Columnas `CHAR`/padded: filtros con `Filter(..., trim=True)` y modelo con
   `ConfigDict(str_strip_whitespace=True)`.
 - El JVM arranca una vez por proceso; pytest corre con `-p no:faulthandler` porque la JVM

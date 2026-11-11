@@ -645,6 +645,2622 @@
       ]
     },
     {
+      "name": "Campos - plantas - distancias (SYSADMIN.IA_CAMPOS_PLANTAS_DISTANCIAS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias?page=2&limit=10&sort=planta_nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "planta_nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias?planta_codigo=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias"
+              ],
+              "query": [
+                {
+                  "key": "planta_codigo",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias/100006",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias",
+                "100006"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Lista con al menos una fila\", () => pm.expect(b).to.be.an(\"array\").that.is.not.empty);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-plantas-distancias?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-plantas-distancias"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Campos - productores (SYSADMIN.IA_CAMPOS_PRODUCTORES)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores?page=2&limit=10&sort=productor_nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "productor_nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores?productor_codigo=4904",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores"
+              ],
+              "query": [
+                {
+                  "key": "productor_codigo",
+                  "value": "4904"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores/100009",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores",
+                "100009"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Lista con al menos una fila\", () => pm.expect(b).to.be.an(\"array\").that.is.not.empty);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/campos-productores?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "campos-productores"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CATAC (SYSADMIN.IA_CATAC)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/catac",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "catac"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/catac?page=2&limit=10&sort=kilometros&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "catac"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "kilometros"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/catac?tarifa_codigo=1&kilometros=100&fecha_desde=2020-01-01&fecha_hasta=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "catac"
+              ],
+              "query": [
+                {
+                  "key": "tarifa_codigo",
+                  "value": "1"
+                },
+                {
+                  "key": "kilometros",
+                  "value": "100"
+                },
+                {
+                  "key": "fecha_desde",
+                  "value": "2020-01-01"
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": "2023-12-31"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/catac?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "catac"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Choferes (SYSADMIN.IA_CHOFERES)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes?page=2&limit=10&sort=nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes?activo=Si&zona=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes"
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "Si"
+                },
+                {
+                  "key": "zona",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con codigo\", () => pm.expect(b).to.have.property(\"codigo\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Choferes activos (SYSADMIN.IA_CHOFERES_ACTIVOS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos?page=2&limit=10&sort=nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos?zona=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos"
+              ],
+              "query": [
+                {
+                  "key": "zona",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con codigo\", () => pm.expect(b).to.have.property(\"codigo\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-activos?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-activos"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Choferes no activos (SYSADMIN.IA_CHOFERES_NO_ACTIVOS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-no-activos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-no-activos"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-no-activos?page=2&limit=10&sort=nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-no-activos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-no-activos?zona=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-no-activos"
+              ],
+              "query": [
+                {
+                  "key": "zona",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/choferes-no-activos?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "choferes-no-activos"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Compras pendientes - facturas (SYSADMIN.IA_COMPRAS_PENDIENTES_FACTURAS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-facturas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-facturas"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-facturas?page=2&limit=10&sort=hca_fecha&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-facturas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "hca_fecha"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-facturas?hca_codigo=OC&hca_sucursal=2&hca_numero=5199",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-facturas"
+              ],
+              "query": [
+                {
+                  "key": "hca_codigo",
+                  "value": "OC"
+                },
+                {
+                  "key": "hca_sucursal",
+                  "value": "2"
+                },
+                {
+                  "key": "hca_numero",
+                  "value": "5199"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-facturas?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-facturas"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Compras pendientes - NC/ND (SYSADMIN.IA_COMPRAS_PENDIENTES_NCND)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-ncnd",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-ncnd"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-ncnd?page=2&limit=10&sort=hca_fecha&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-ncnd"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "hca_fecha"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-ncnd?hca_codigo=F",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-ncnd"
+              ],
+              "query": [
+                {
+                  "key": "hca_codigo",
+                  "value": "F"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/compras-pendientes-ncnd?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "compras-pendientes-ncnd"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Empresas de transporte (SYSADMIN.IA_EMPRESA_TRANSPORTE)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte?page=2&limit=10&sort=nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte?activo=Si",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte"
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "Si"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con codigo\", () => pm.expect(b).to.have.property(\"codigo\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/empresas-transporte?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "empresas-transporte"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Impuestos - regímenes (SYSADMIN.IA_IMPUESTOS_REGIMENES)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes?page=2&limit=10&sort=rgi_descripcion&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "rgi_descripcion"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes?rgi_tipo_operacion=Retenci%C3%B3n&rgi_habilitado=S%C3%AD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes"
+              ],
+              "query": [
+                {
+                  "key": "rgi_tipo_operacion",
+                  "value": "Retención"
+                },
+                {
+                  "key": "rgi_habilitado",
+                  "value": "Sí"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con rgi_codigo_regimen\", () => pm.expect(b).to.have.property(\"rgi_codigo_regimen\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes",
+                "99999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/impuestos-regimenes?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "impuestos-regimenes"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Plantas (SYSADMIN.IA_PLANTAS)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas?page=2&limit=10&sort=pla_descripcion&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "pla_descripcion"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas?pla_inactivo=No",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas"
+              ],
+              "query": [
+                {
+                  "key": "pla_inactivo",
+                  "value": "No"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con pla_planta\", () => pm.expect(b).to.have.property(\"pla_planta\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas",
+                "99999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/plantas?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "plantas"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productores (SYSADMIN.IA_PRODUCTORES)",
+      "item": [
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado paginado y ordenado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores?page=2&limit=10&sort=nombre&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores?activo=Si&zona=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores"
+              ],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "Si"
+                },
+                {
+                  "key": "zona",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Formato {page, limit, total, data}\", () =>",
+                  "        pm.expect(Object.keys(b).sort()).to.eql([\"data\", \"limit\", \"page\", \"total\"]));",
+                  "    pm.test(\"data no supera limit\", () => pm.expect(b.data.length).to.be.at.most(b.limit));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores",
+                "1"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test(\"200, o 500 genérico si Oracle no está disponible\", () => pm.expect([200, 500]).to.include(code));",
+                  "if (code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.test(\"Objeto con codigo\", () => pm.expect(b).to.have.property(\"codigo\"));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores/9999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores",
+                "9999999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 o 500\", () => pm.expect([404, 500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sort fuera de lista blanca → 422",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/productores?sort=no_existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "productores"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "no_existe"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Productos",
       "item": [
         {

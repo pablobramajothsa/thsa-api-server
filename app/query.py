@@ -148,7 +148,7 @@ def build_page_sql(
 
 
 def build_detail_sql(
-    spec: ViewSpec, schema: str | None, item_id: int
+    spec: ViewSpec, schema: str | None, item_id: int | str
 ) -> tuple[str, dict[str, Any]]:
     columns = ", ".join(spec.columns)
     order_by = ", ".join(f"{key} ASC" for key in spec.key_columns)
@@ -180,12 +180,14 @@ def fetch_page(
     return total, db.fetch_all(page_sql, page_binds)
 
 
-def fetch_by_id(db: Database, spec: ViewSpec, schema: str | None, item_id: int) -> Row | None:
+def fetch_by_id(db: Database, spec: ViewSpec, schema: str | None, item_id: int | str) -> Row | None:
     sql, binds = build_detail_sql(spec, schema, item_id)
     return db.fetch_one(sql, binds)
 
 
-def fetch_all_by_id(db: Database, spec: ViewSpec, schema: str | None, item_id: int) -> list[Row]:
+def fetch_all_by_id(
+    db: Database, spec: ViewSpec, schema: str | None, item_id: int | str
+) -> list[Row]:
     """Para vistas donde el id se repite (p. ej. un campo con varios productores)."""
     sql, binds = build_detail_sql(spec, schema, item_id)
     return db.fetch_all(sql, binds)

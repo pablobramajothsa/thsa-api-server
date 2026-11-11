@@ -67,20 +67,37 @@ CREATE USER &&api_user IDENTIFIED BY "&&api_password"
 GRANT CREATE SESSION TO &&api_user;
 
 -- -----------------------------------------------------------------------------
--- 4. SELECT solo sobre las vistas publicadas (placeholders).
+-- 4. SELECT solo sobre las vistas publicadas (una línea por vista de
+--    app/routers/__init__.py -> VIEW_MODULES). En la base de prueba las vistas
+--    IA_* están en SYSADMIN: usar DEFINE owner_schema = SYSADMIN.
 --    Si una vista lee tablas de OTRO esquema, el dueño de la vista necesita
 --    SELECT ... WITH GRANT OPTION sobre esas tablas para poder otorgar la vista.
 -- -----------------------------------------------------------------------------
-GRANT SELECT ON &&owner_schema..V_PRODUCTOS TO &&api_user;
-GRANT SELECT ON &&owner_schema..V_CLIENTES  TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CAMPOS                      TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CAMPOS_PLANTAS_DISTANCIAS   TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CAMPOS_PRODUCTORES          TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CATAC                       TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CHOFERES                    TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CHOFERES_ACTIVOS            TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_CHOFERES_NO_ACTIVOS         TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_COMPRAS_PENDIENTES_FACTURAS TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_COMPRAS_PENDIENTES_NCND     TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_EMPRESA_TRANSPORTE          TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_IMPUESTOS_REGIMENES         TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_PLANTAS                     TO &&api_user;
+GRANT SELECT ON &&owner_schema..IA_PRODUCTORES                 TO &&api_user;
+-- Vistas de ejemplo (V_PRODUCTOS, V_CLIENTES): no existen en la base; descomentar
+-- solo si se crean, porque un GRANT sobre una vista inexistente corta el script.
+-- GRANT SELECT ON &&owner_schema..V_PRODUCTOS TO &&api_user;
+-- GRANT SELECT ON &&owner_schema..V_CLIENTES  TO &&api_user;
 
 -- -----------------------------------------------------------------------------
 -- 5. (Opcional) Sinónimos privados para que la API use los nombres sin esquema.
---    Alternativa: dejar esto comentado y configurar VIEW_SCHEMA=&&owner_schema
---    en el .env de la API.
+--    Alternativa (la que se usa hoy): dejar esto comentado y configurar
+--    VIEW_SCHEMA=&&owner_schema en el .env de la API.
 -- -----------------------------------------------------------------------------
--- CREATE SYNONYM &&api_user..V_PRODUCTOS FOR &&owner_schema..V_PRODUCTOS;
--- CREATE SYNONYM &&api_user..V_CLIENTES  FOR &&owner_schema..V_CLIENTES;
+-- CREATE SYNONYM &&api_user..IA_CAMPOS FOR &&owner_schema..IA_CAMPOS;
+-- (repetir para cada vista del punto 4)
 
 -- -----------------------------------------------------------------------------
 -- 6. Verificación: el usuario debe tener SOLO CREATE SESSION y SELECT en las vistas.

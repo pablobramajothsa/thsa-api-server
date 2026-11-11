@@ -15,11 +15,15 @@ Opciones:
     --schema ESQUEMA      esquema propio de la vista (si no, VIEW_SCHEMA del .env)
     --from-db             leer columnas de ALL_TAB_COLUMNS y verificar si el id es único
     --columns LISTA       columnas a mano: "COL:NUMBER(7),COL2:VARCHAR2(50),COL3:DATE"
-    --id COLUMNA          columna id del detalle (default: la primera)
+    --id COLUMNA          columna id del detalle, entera o de texto (default: la primera)
+    --key COL1,COL2       columnas que identifican una fila (desempate del orden)
+    --sort COLUMNA        columna por la que se permite ordenar (repetible; el id siempre)
     --filter COLUMNA      filtro de igualdad (repetible)
     --trim                comparar los filtros de texto con TRIM (columnas con espacios de relleno)
     --date-filter COLUMNA rango fecha_desde / fecha_hasta sobre esa columna DATE
     --detail-list         el id se repite: el detalle devuelve una lista (con --from-db se detecta)
+    --detail-one          el id se repite solo en filas idénticas: el detalle devuelve una fila
+    --no-detail           sin endpoint de detalle (solo listado con filtros)
     --model NOMBRE        nombre de la clase Pydantic (default: recurso en CamelCase)
     --dry-run             mostrar el router por pantalla sin escribir nada
     --no-register         no agregar el módulo a app/routers/__init__.py
@@ -101,9 +105,9 @@ class Column:
         if t == "NUMBER":
             if is_id or self.scale == 0:
                 return "int"
-            if self.scale is not None and self.scale > 0:
-                return "Decimal"  # exacto; en JSON se serializa como string
-            return "float"  # NUMBER sin precisión: revisar si conviene int o Decimal
+            # Con decimales o sin precisión: float, como el resto de la API (en JSON es un
+            # número). Si hace falta precisión exacta, cambiar a mano a Decimal.
+            return "float"
         if t in ("INTEGER", "SMALLINT"):
             return "int"
         if t in ("FLOAT", "BINARY_FLOAT", "BINARY_DOUBLE"):
@@ -206,7 +210,21 @@ class Plan:
     filters: list[Column]
     trim: bool
     date_filter: Column | None
-    detail_list: bool
+    detail: str  # "one" | "list" | "none"
+    key: list[Column]
+    sort: list[Column]
+
+    @property
+    def detail_list(self) -> bool:
+        return self.detail == "list"
+
+    @property
+    def has_detail(self) -> bool:
+        return self.detail != "none"
+
+    @property
+    def str_id(self) -> bool:
+        return self.id_column.is_string
 
     @property
     def prefix(self) -> str:
@@ -222,7 +240,10 @@ class Plan:
 
     @property
     def sort_fields(self) -> list[Column]:
-        return [c for c in self.columns if c.sortable]
+        if not self.sort:
+            return [c for c in self.columns if c.sortable]
+        fields = [self.id_column, *self.sort]
+        return [c for i, c in enumerate(fields) if c not in fields[:i]]
 
     def max_id(self) -> tuple[str, str]:
         """(nombre de la constante, expresión)."""
@@ -264,11 +285,16 @@ def validate(plan: Plan) -> None:
             )
     if plan.date_filter and plan.date_filter.py_type(False) != "datetime":
         raise ScaffoldError(f"--date-filter {plan.date_filter.name} no es una columna DATE")
-    if plan.id_column.py_type(True) != "int":
+    if plan.has_detail and not (plan.str_id or plan.id_column.py_type(True) == "int"):
         raise ScaffoldError(
-            f"la columna id {plan.id_column.name} no es numérica: el generador solo soporta "
-            "ids enteros (adaptar el router a mano)"
+            f"la columna id {plan.id_column.name} no es entera ni de texto: usar otra con --id "
+            "o --no-detail"
         )
+    if plan.has_detail and plan.str_id and not plan.id_column.length:
+        raise ScaffoldError(f"la columna id {plan.id_column.name} no tiene largo definido")
+    for column in plan.sort:
+        if not column.sortable:
+            raise ScaffoldError(f"--sort {column.name}: no se puede ordenar por un LOB")
 
 
 def _filter_param(column: Column) -> str:
@@ -288,17 +314,18 @@ def _filter_param(column: Column) -> str:
 def render_router(plan: Plan) -> str:
     types = {c.py_type(c is plan.id_column) for c in plan.columns}
     has_str = any(c.is_string for c in plan.columns)
-    max_name, max_expr = plan.max_id()
+    int_detail = plan.has_detail and not plan.str_id
+    max_name, max_expr = plan.max_id() if int_detail else ("", "")
     fetch_detail = "fetch_all_by_id" if plan.detail_list else "fetch_by_id"
 
     std_imports = []
     if "datetime" in types:
         std_imports.append("from datetime import datetime")
-    if "Decimal" in types:
-        std_imports.append("from decimal import Decimal")
     std_imports.append("from typing import Annotated, Any, Literal")
 
-    fastapi_names = ["APIRouter", "Depends", "HTTPException", "Path"]
+    fastapi_names = ["APIRouter", "Depends"]
+    if plan.has_detail:
+        fastapi_names += ["HTTPException", "Path"]
     if plan.filters:
         fastapi_names.append("Query")
     pydantic_names = ["BaseModel"] + (["ConfigDict"] if has_str else [])
@@ -307,7 +334,9 @@ def render_router(plan: Plan) -> str:
         params_names.append("date_range_filters")
     if max_name == "MAX_ID":
         params_names.append("MAX_ID")
-    query_names = ["SortOrder", "ViewSpec", fetch_detail, "fetch_page"]
+    query_names = ["SortOrder", "ViewSpec", "fetch_page"]
+    if plan.has_detail:
+        query_names.insert(2, fetch_detail)
     if plan.filters or plan.date_filter:
         query_names.insert(0, "Filter")
 
@@ -336,7 +365,7 @@ def render_router(plan: Plan) -> str:
         "from app.security import require_user",
         "",
     ]
-    if max_name != "MAX_ID":
+    if max_name and max_name != "MAX_ID":
         out += [f"{max_name} = {max_expr}", ""]
     out += [
         "SortField = Literal[" + ", ".join(f'"{c.field}"' for c in plan.sort_fields) + "]",
@@ -352,7 +381,9 @@ def render_router(plan: Plan) -> str:
         "    ),",
         f'    id_column="{plan.id_column.name}",',
     ]
-    if plan.detail_list:
+    if plan.key:
+        out.append("    tiebreak_columns=(" + ", ".join(f'"{c.name}"' for c in plan.key) + ",),")
+    elif plan.detail_list:
         out.append(
             "    # TODO: el id se repite; completar con las columnas que identifican una fila."
         )
@@ -427,13 +458,22 @@ def render_router(plan: Plan) -> str:
         "",
     ]
     p = plan.path_param
-    if plan.detail_list:
+    if plan.str_id:
+        path_type = (
+            f"Annotated[str, Path(min_length=1, max_length={plan.id_column.length}, "
+            'pattern=r"^[A-Za-z0-9]+$")]'
+        )
+    else:
+        path_type = f"Annotated[int, Path(ge=1, le={max_name})]"
+    if not plan.has_detail:
+        out = out[:-2]  # sin líneas en blanco finales: no hay más endpoints
+    elif plan.detail_list:
         out += [
             f'@router.get("/{{{p}}}", response_model=list[{plan.model}])',
             f"def obtener_{plan.resource}(",
             "    db: Annotated[Database, Depends(get_db)],",
             "    settings: Annotated[Settings, Depends(get_settings)],",
-            f"    {p}: Annotated[int, Path(ge=1, le={max_name})],",
+            f"    {p}: {path_type},",
             ") -> list[dict[str, Any]]:",
             '    """Todas las filas con ese id. 404 si no existe."""',
             f"    rows = fetch_all_by_id(db, SPEC, settings.view_schema, {p})",
@@ -447,7 +487,7 @@ def render_router(plan: Plan) -> str:
             f"def obtener_{plan.resource}(",
             "    db: Annotated[Database, Depends(get_db)],",
             "    settings: Annotated[Settings, Depends(get_settings)],",
-            f"    {p}: Annotated[int, Path(ge=1, le={max_name})],",
+            f"    {p}: {path_type},",
             ") -> dict[str, Any]:",
             f"    row = fetch_by_id(db, SPEC, settings.view_schema, {p})",
             "    if row is None:",
@@ -463,10 +503,10 @@ def _sample(column: Column, is_id: bool) -> str:
         return "1" if is_id else "10"
     if t == "float":
         return "1.5"
-    if t == "Decimal":
-        return 'Decimal("12.50")'
     if t == "datetime":
         return "datetime(2024, 1, 15, 10, 30)"
+    if is_id:
+        return repr("123"[: column.length or 3])
     max_len = column.length or 5
     return repr("TEXTO"[:max_len] or "T")
 
@@ -477,8 +517,6 @@ def render_test(plan: Plan) -> str:
     std_imports = []
     if "datetime" in types:
         std_imports.append("from datetime import datetime")
-    if "Decimal" in types:
-        std_imports.append("from decimal import Decimal")
     out = [
         f'"""Tests de {plan.prefix} (vista {plan.source}).',
         "",
@@ -557,12 +595,21 @@ def render_test(plan: Plan) -> str:
             "",
         ]
     id_value = _sample(plan.id_column, True)
+    path_value = id_value.strip("'")  # en la URL, el id de texto va sin comillas
+    if not plan.has_detail:
+        out += [
+            "",
+            "def test_no_hay_detalle(client, fake_db, auth):",
+            '    assert client.get(f"{URL}/1", headers=auth).status_code == 404',
+            "    assert fake_db.calls == []",
+        ]
+        return "\n".join(out) + "\n"
     if plan.detail_list:
         out += [
             "",
             "def test_detalle_devuelve_todas_las_filas(client, fake_db, auth):",
             "    fake_db.rows = [FILA]",
-            f'    response = client.get(f"{{URL}}/{id_value}", headers=auth)',
+            f'    response = client.get(f"{{URL}}/{path_value}", headers=auth)',
             '    sql, binds = fake_db.last("all")',
             "",
             "    assert response.status_code == 200, response.text",
@@ -583,7 +630,7 @@ def render_test(plan: Plan) -> str:
             "",
             "def test_detalle_existente(client, fake_db, auth):",
             "    fake_db.detail = FILA",
-            f'    response = client.get(f"{{URL}}/{id_value}", headers=auth)',
+            f'    response = client.get(f"{{URL}}/{path_value}", headers=auth)',
             '    sql, binds = fake_db.last("one")',
             "",
             "    assert response.status_code == 200, response.text",
@@ -599,9 +646,14 @@ def render_test(plan: Plan) -> str:
             '    assert response.json() == {"detail": "Not found"}',
             "",
         ]
+    if plan.str_id:
+        too_long = "x" * ((plan.id_column.length or 0) + 1)
+        invalid = f'["{too_long}", "a b", "1;DROP", "1%27"]'
+    else:
+        invalid = '["0", "-1", "abc", "1.5"]'
     out += [
         "",
-        '@pytest.mark.parametrize("valor", ["0", "-1", "abc", "1.5"])',
+        f'@pytest.mark.parametrize("valor", {invalid})',
         "def test_id_invalido_422(client, fake_db, auth, valor):",
         '    assert client.get(f"{URL}/{valor}", headers=auth).status_code == 422',
         "    assert fake_db.calls == []",
@@ -611,14 +663,19 @@ def render_test(plan: Plan) -> str:
 
 def register(resource: str) -> bool:
     text = REGISTRY.read_text(encoding="utf-8")
-    import_match = re.search(r"^from app\.routers import ([^\n(]+)$", text, re.MULTILINE)
+    # El import puede estar en una línea o entre paréntesis en varias (ruff lo parte).
+    import_match = re.search(
+        r"^from app\.routers import (?:\(([^)]*)\)|([^\n(]+))$", text, re.MULTILINE
+    )
     modules_match = re.search(
         r"(VIEW_MODULES: tuple\[ModuleType, \.\.\.\] = \(\n)(.*?)(\n\))", text, re.DOTALL
     )
     if not import_match or not modules_match:
         return False
-    names = {n.strip() for n in import_match[1].split(",")} | {resource}
-    text = text.replace(import_match[0], "from app.routers import " + ", ".join(sorted(names)))
+    imported = import_match[1] if import_match[1] is not None else import_match[2]
+    names = {n.strip() for n in imported.split(",") if n.strip()} | {resource}
+    lines = "".join(f"    {name},\n" for name in sorted(names))
+    text = text.replace(import_match[0], f"from app.routers import (\n{lines})")
     modules_match = re.search(
         r"(VIEW_MODULES: tuple\[ModuleType, \.\.\.\] = \(\n)(.*?)(\n\))", text, re.DOTALL
     )
@@ -674,15 +731,25 @@ def _plan(args, view, schema, columns, db, owner) -> Plan:
         return column
 
     id_column = pick(args.id) if args.id else columns[0]
-    detail_list = args.detail_list
-    if db is not None and not detail_list:
+    if sum((args.detail_list, args.detail_one, args.no_detail)) > 1:
+        raise ScaffoldError("usar solo una de --detail-list, --detail-one o --no-detail")
+    if args.no_detail:
+        detail = "none"
+    elif args.detail_list:
+        detail = "list"
+    else:
+        detail = "one"
+    if db is not None and not (args.detail_one or args.detail_list or args.no_detail):
         counts = id_counts(db, view, owner, id_column.name)
         if counts:
             total, distinct = counts
             print(f"{view}: {total} filas, {distinct} valores distintos de {id_column.name}")
             if total != distinct:
                 print(f"[AVISO] {id_column.name} se repite: el detalle devolverá una lista.")
-                detail_list = True
+                detail = "list"
+    key = [pick(name) for name in args.key.split(",")] if args.key else []
+    if key and key[0] is not id_column:
+        raise ScaffoldError("--key debe empezar por la columna id")
     return Plan(
         resource=args.resource,
         model=args.model or _camel(args.resource),
@@ -693,7 +760,9 @@ def _plan(args, view, schema, columns, db, owner) -> Plan:
         filters=[pick(name) for name in args.filter],
         trim=args.trim,
         date_filter=pick(args.date_filter) if args.date_filter else None,
-        detail_list=detail_list,
+        detail=detail,
+        key=key,
+        sort=[pick(name) for name in args.sort],
     )
 
 
@@ -706,10 +775,14 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--from-db", action="store_true")
     source.add_argument("--columns")
     parser.add_argument("--id")
+    parser.add_argument("--key")
+    parser.add_argument("--sort", action="append", default=[])
     parser.add_argument("--filter", action="append", default=[])
     parser.add_argument("--trim", action="store_true")
     parser.add_argument("--date-filter")
     parser.add_argument("--detail-list", action="store_true")
+    parser.add_argument("--detail-one", action="store_true")
+    parser.add_argument("--no-detail", action="store_true")
     parser.add_argument("--model")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-register", action="store_true")

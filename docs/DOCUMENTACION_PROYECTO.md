@@ -119,6 +119,18 @@ run_local.bat      arranque local con doble clic
 | `POST /v1/auth/token` | no | Login. Body `x-www-form-urlencoded` con `username` y `password`. Devuelve `access_token`, `token_type`, `expires_in`. |
 | `GET /v1/campos` | sí | Listado paginado de `SYSADMIN.IA_CAMPOS`. |
 | `GET /v1/campos/{campo_codigo}` | sí | Todas las filas del campo (una por productor). 404 si no existe. |
+| `GET /v1/campos-plantas-distancias`, `/{campo_codigo}` | sí | `IA_CAMPOS_PLANTAS_DISTANCIAS`: kms de cada campo a cada planta. Filtro: `planta_codigo`. Detalle: lista. |
+| `GET /v1/campos-productores`, `/{campo_codigo}` | sí | `IA_CAMPOS_PRODUCTORES`. Filtros: `productor_codigo`, `productor_cuit`. Detalle: lista (una fila por productor). |
+| `GET /v1/catac` | sí | `IA_CATAC`: tarifas por tonelada. Filtros: `tarifa_codigo`, `kilometros`, `fecha_desde`/`fecha_hasta` (vigencia). Sin detalle. |
+| `GET /v1/choferes`, `/{codigo}` | sí | `IA_CHOFERES`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`, `pro_empresa_transporte`, `pro_patente_camion`. |
+| `GET /v1/choferes-activos`, `/{codigo}` | sí | `IA_CHOFERES_ACTIVOS`. Mismos filtros que choferes. |
+| `GET /v1/choferes-no-activos`, `/{codigo}` | sí | `IA_CHOFERES_NO_ACTIVOS`. Mismos filtros que choferes. |
+| `GET /v1/compras-pendientes-facturas` | sí | `IA_COMPRAS_PENDIENTES_FACTURAS`. Filtros: `hca_codigo`, `hca_sucursal`, `hca_numero`, `hcv_entidad`, `hca_articulo`, `fecha_desde`/`fecha_hasta`. Sin detalle. |
+| `GET /v1/compras-pendientes-ncnd` | sí | `IA_COMPRAS_PENDIENTES_NCND`. Mismos filtros que facturas. Sin detalle. |
+| `GET /v1/empresas-transporte`, `/{codigo}` | sí | `IA_EMPRESA_TRANSPORTE`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`. |
+| `GET /v1/impuestos-regimenes`, `/{rgi_codigo_regimen}` | sí | `IA_IMPUESTOS_REGIMENES`. Filtros: `rgi_codigo_impuesto`, `rgi_tipo_operacion`, `rgi_provincia`, `rgi_habilitado`. |
+| `GET /v1/plantas`, `/{pla_planta}` | sí | `IA_PLANTAS`. Filtros: `pla_inactivo`, `pla_codigo_postal`. |
+| `GET /v1/productores`, `/{codigo}` | sí | `IA_PRODUCTORES`. Filtros: `cuit`, `comercial_codigo`, `zona`, `categoria`, `activo`. |
 | `GET /v1/productos`, `/v1/productos/{id}` | sí | Ejemplo sobre `V_PRODUCTOS` (no existe en la base de prueba → 500). |
 | `GET /v1/clientes`, `/v1/clientes/{id}` | sí | Ejemplo sobre `V_CLIENTES` (no existe en la base de prueba → 500). |
 
@@ -185,6 +197,39 @@ Decisiones derivadas:
   paginación sea estable.
 - **Espacios de relleno**: los filtros comparan contra `TRIM(columna)` y el valor recibido
   también se recorta; la respuesta JSON devuelve los textos sin esos espacios.
+
+---
+
+## 5.1 Vistas publicadas el 11/11/2026
+
+Relevadas con consultas de solo lectura en la base de prueba (estructura, filas, claves,
+espacios de relleno) y probadas de punta a punta con la app conectada por JDBC: listado,
+cada orden permitido, cada filtro con un valor real, paginación y detalle.
+
+| Vista → endpoint | Filas | Clave / detalle | Observaciones |
+|---|---|---|---|
+| `IA_CAMPOS_PLANTAS_DISTANCIAS` → `/v1/campos-plantas-distancias` | 45076 | Sin clave única. Detalle por `campo_codigo` → lista. | 30183 filas sin planta y filas repetidas idénticas (37722 distintas). |
+| `IA_CAMPOS_PRODUCTORES` → `/v1/campos-productores` | 4334 | (`CAMPO_CODIGO`, `PRODUCTOR_CODIGO`). Detalle → lista. | `PRODUCTOR_CODIGO` con relleno (TRIM). |
+| `IA_CATAC` → `/v1/catac` | 134510 | (`TARIFA_CODIGO`, `FECHA_VIGENCIA_DESDE`, `KILOMETROS`). Sin detalle. | Hasta 2400 filas por tarifa: se consulta con filtros. `SEGUNDA_TARIFA` vacía. |
+| `IA_CHOFERES` → `/v1/choferes` | 54810 | `CODIGO` (texto). Detalle → una fila. | 35 filas repetidas idénticas. Datos personales (nombre, CUIT, carnet, patentes). |
+| `IA_CHOFERES_ACTIVOS` → `/v1/choferes-activos` | 54810 | Igual que choferes. | **Devuelve lo mismo que `IA_CHOFERES`**, incluidos 12567 con `ACTIVO = 'No'`. |
+| `IA_CHOFERES_NO_ACTIVOS` → `/v1/choferes-no-activos` | 0 | Igual que choferes. | **Vacía**, aunque hay 12567 choferes con `ACTIVO = 'No'`. |
+| `IA_COMPRAS_PENDIENTES_FACTURAS` → `/v1/compras-pendientes-facturas` | 34 | (`HCA_CODIGO`, `HCA_SUCURSAL`, `HCA_NUMERO`, `HCA_RENGLON`). Sin detalle: filtrar por comprobante. | **Lenta: ~4 s por consulta** (cada request hace 2). Muchas columnas siempre nulas. |
+| `IA_COMPRAS_PENDIENTES_NCND` → `/v1/compras-pendientes-ncnd` | 2 | Igual que facturas. | **Lenta: ~4 s por consulta.** |
+| `IA_EMPRESA_TRANSPORTE` → `/v1/empresas-transporte` | 23407 | `CODIGO` (texto, único). | |
+| `IA_IMPUESTOS_REGIMENES` → `/v1/impuestos-regimenes` | 263 | `RGI_CODIGO_REGIMEN` (único). | Valores con acento (`Sí`, `Retención`). |
+| `IA_PLANTAS` → `/v1/plantas` | 68 | `PLA_PLANTA` (único). | `PLA_INACTIVO` = `Sí` (con acento) / `No`. |
+| `IA_PRODUCTORES` → `/v1/productores` | 16927 | `CODIGO` (texto, único). | Coincide con el `PRODUCTOR_CODIGO` de `IA_CAMPOS` ya recortado. |
+
+Criterios comunes:
+
+- Se publican todas las columnas de cada vista, con los nombres en minúsculas.
+- Los textos se devuelven sin espacios de relleno; los filtros sobre columnas que los traen
+  comparan con `TRIM`.
+- Las filas repetidas idénticas no rompen la paginación: el orden desempata por la clave (o
+  por todas las columnas), así que solo empatan filas iguales.
+- El detalle de los códigos de texto acepta letras y números (`/v1/choferes/125613`).
+- Las notas de cada vista están en el docstring de su router (`app/routers/<recurso>.py`).
 
 ---
 
@@ -381,7 +426,8 @@ Para un request armado a mano: `POST {{baseUrl}}/v1/auth/token`, pestaña *Body*
 3. **Usuario de base de solo lectura**: hoy la API se conecta con el usuario dueño del
    esquema de la base de prueba, que tiene más permisos de los necesarios. Pedir al DBA que
    ejecute `sql/setup.sql` (usuario con `CREATE SESSION` y `SELECT` solo sobre las vistas,
-   más un PROFILE con límites) y ajustar los GRANTs a `SYSADMIN.IA_CAMPOS`.
+   más un PROFILE con límites), con `DEFINE owner_schema = SYSADMIN`. El script ya tiene
+   los GRANTs de las 13 vistas `IA_*` publicadas.
 4. **Rotar credenciales** que se compartieron durante el desarrollo (la contraseña de la base
    de prueba y la del usuario de Postman) antes de cualquier uso fuera de pruebas.
 
@@ -394,6 +440,17 @@ Para un request armado a mano: `POST {{baseUrl}}/v1/auth/token`, pestaña *Body*
 7. **Varios procesos**: con más de un worker, usar Redis para el rate limiting
    (`RATE_LIMIT_STORAGE_URI`) y ajustar `SESSIONS_PER_USER` del PROFILE (cada proceso tiene
    su pool y su JVM).
+
+### De las vistas (para quien las mantiene)
+
+8. **`IA_CHOFERES_ACTIVOS` / `IA_CHOFERES_NO_ACTIVOS`**: la primera devuelve todos los
+   choferes (también los inactivos) y la segunda está vacía. Revisar sus definiciones.
+9. **Compras pendientes**: `IA_COMPRAS_PENDIENTES_FACTURAS` y `IA_COMPRAS_PENDIENTES_NCND`
+   tardan ~4 s por consulta con muy pocas filas, cerca del timeout de 5 s
+   (`DB_CALL_TIMEOUT_MS`). Conviene optimizar las vistas; si no, subir el timeout.
+10. **Filas repetidas**: `IA_CHOFERES` (35) e `IA_CAMPOS_PLANTAS_DISTANCIAS` (7354) tienen
+    filas idénticas repetidas, probablemente por un join. La API las tolera, pero los
+    consumidores las ven en los listados.
 
 ### Nuevas APIs (10/11/2026)
 
@@ -409,5 +466,4 @@ Se preparó el proyecto para publicar más vistas:
 
 ### Repositorio
 
-8. **Git**: configurar nombre y email de autor y hacer el primer commit (el `.gitignore` ya
-   excluye secretos, entorno virtual y binarios).
+11. **Git**: hecho. Repositorio en GitHub (`pablobramajothsa/thsa-api-server`, privado).

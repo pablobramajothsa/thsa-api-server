@@ -68,11 +68,15 @@ opciones.
 | `--view` | Vista Oracle. |
 | `--schema` | Esquema propio de la vista (`ViewSpec.schema`); si no, se usa `VIEW_SCHEMA`. |
 | `--from-db` / `--columns` | De dónde salen las columnas. |
-| `--id` | Columna del detalle (entera). Default: la primera. |
+| `--id` | Columna del detalle, entera o de texto (códigos `VARCHAR2`). Default: la primera. |
+| `--key COL1,COL2` | Columnas que identifican una fila (empieza por el id). Desempatan el orden. |
+| `--sort COL` | Columna por la que se puede ordenar (repetible). Sin `--sort`, todas. |
 | `--filter COL` | Filtro de igualdad (repetible). Columnas de texto o enteras. |
 | `--trim` | Los filtros de texto comparan `TRIM(columna)`. |
 | `--date-filter COL` | Agrega `fecha_desde` / `fecha_hasta` (inclusive) sobre una columna `DATE`. |
 | `--detail-list` | El id se repite: el detalle devuelve una lista. Con `--from-db` se detecta solo. |
+| `--detail-one` | El id se repite solo en filas idénticas: el detalle devuelve una fila. |
+| `--no-detail` | Sin endpoint de detalle (vistas sin id útil: se consulta con filtros). |
 | `--model` | Nombre de la clase Pydantic (default: recurso en CamelCase). |
 
 Mapeo de tipos que aplica el generador:
@@ -80,8 +84,7 @@ Mapeo de tipos que aplica el generador:
 | Oracle | Python / JSON |
 |---|---|
 | `NUMBER(p)` / `NUMBER(p,0)` / `INTEGER` | `int` |
-| `NUMBER(p,s)` con `s > 0` | `Decimal` (exacto; en JSON sale como string) |
-| `NUMBER` sin precisión, `FLOAT`, `BINARY_DOUBLE` | `float` (revisar: puede convenir `int` o `Decimal`) |
+| `NUMBER(p,s)` con `s > 0`, `NUMBER` sin precisión, `FLOAT`, `BINARY_DOUBLE` | `float` (para precisión exacta, cambiar a mano a `Decimal`) |
 | `DATE`, `TIMESTAMP` | `datetime` (el `DATE` de Oracle incluye la hora) |
 | `VARCHAR2`, `CHAR`, `CLOB`, otros | `str` |
 

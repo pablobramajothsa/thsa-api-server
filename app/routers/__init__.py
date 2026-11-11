@@ -13,7 +13,25 @@ Cada módulo de vista debe exponer:
 
 from types import ModuleType
 
-from app.routers import auth, campos, clientes, health, productos
+from app.routers import (
+    auth,
+    campos,
+    campos_plantas_distancias,
+    campos_productores,
+    catac,
+    choferes,
+    choferes_activos,
+    choferes_no_activos,
+    clientes,
+    compras_pendientes_facturas,
+    compras_pendientes_ncnd,
+    empresas_transporte,
+    health,
+    impuestos_regimenes,
+    plantas,
+    productores,
+    productos,
+)
 
 # Routers sin vista (no pasan por los tests de contrato de vistas).
 BASE_MODULES: tuple[ModuleType, ...] = (health, auth)
@@ -23,4 +41,16 @@ VIEW_MODULES: tuple[ModuleType, ...] = (
     campos,
     productos,
     clientes,
+    campos_plantas_distancias,
+    campos_productores,
+    catac,
+    choferes,
+    choferes_activos,
+    choferes_no_activos,
+    compras_pendientes_facturas,
+    compras_pendientes_ncnd,
+    empresas_transporte,
+    impuestos_regimenes,
+    plantas,
+    productores,
 )
