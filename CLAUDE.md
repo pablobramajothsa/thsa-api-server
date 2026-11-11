@@ -62,6 +62,13 @@ Seguir `docs/GUIA_NUEVA_API.md`. Resumen:
 - El JVM arranca una vez por proceso; pytest corre con `-p no:faulthandler` porque la JVM
   provoca "access violation" internas en Windows (inofensivas).
 
+## Servidor de testing
+
+`192.168.16.39` (`TH-SRV-PPRD`), Windows + IIS. API en el puerto **8001** (el 8000 es de otra
+app), servicio `ThsaApiServer` con NSSM. Se instala/actualiza con `deploy\*.ps1` ejecutados
+por un administrador vía RDP (desde acá WinRM da "Acceso denegado"). Guía:
+`docs/INSTALACION_SERVIDOR.md`. Los `.ps1` van sin acentos (PowerShell 5.1 los lee como ANSI).
+
 ## Archivos que no se versionan
 
 `.env`, `users.json`, `postman/*.postman_environment.json`, `lib/*.jar`. No leer ni copiar

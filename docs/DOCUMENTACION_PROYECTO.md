@@ -418,7 +418,8 @@ Para un request armado a mano: `POST {{baseUrl}}/v1/auth/token`, pestaña *Body*
 
 ### Para dejarlo listo en un servidor
 
-1. **Despliegue**: elegir proxy inverso con HTTPS (IIS con URL Rewrite + ARR, Nginx o
+1. **Despliegue**: el servidor de testing (`192.168.16.39:8001`) tiene instalador propio,
+   ver `docs/INSTALACION_SERVIDOR.md`. Para producción: elegir proxy inverso con HTTPS (IIS con URL Rewrite + ARR, Nginx o
    Apache), redirección HTTP→HTTPS, dominio, certificado TLS y, si corresponde, lista blanca
    de IPs. Correr la API como servicio (NSSM/WinSW en Windows, systemd en Linux) con uvicorn
    en `127.0.0.1:8000` y `--proxy-headers --forwarded-allow-ips 127.0.0.1`.

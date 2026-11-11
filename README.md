@@ -331,9 +331,13 @@ En `postman/` está la colección `apis_server.postman_collection.json`. Para us
 3. Ejecutar cualquier request: la colección hace el login sola y guarda el token en
    `accessToken`. También se puede hacer a mano con *Autenticación → Login (obtener token)*.
 
-## Despliegue (pendiente)
+## Despliegue
 
-Por ahora el proyecto está preparado para correr en local. Para un servidor falta:
+**Servidor de testing** (`192.168.16.39`, puerto 8001, servicio de Windows con NSSM): ver
+[docs/INSTALACION_SERVIDOR.md](docs/INSTALACION_SERVIDOR.md). Lo instala
+`deploy\instalar_servidor.ps1` y lo actualiza `deploy\actualizar_servidor.ps1`.
+
+**Producción** (pendiente). Además de lo anterior, falta:
 
 - Elegir el proxy inverso con HTTPS (IIS con URL Rewrite + ARR, Nginx o Apache), la
   redirección HTTP→HTTPS y, si corresponde, la lista blanca de IPs.
