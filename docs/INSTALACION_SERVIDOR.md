@@ -18,6 +18,40 @@ equipo no se puede, porque WinRM pide permisos de administrador.
 
 ---
 
+## Instalación en un paso (recomendada)
+
+`deploy/instalar_todo.ps1` hace toda la instalación. Es PowerShell (no Python) porque el
+servidor todavía no tiene Python: lo instala el propio script.
+
+1. Copiar `deploy\instalar_todo.ps1` al servidor (por Escritorio Remoto se puede copiar y
+   pegar el archivo), por ejemplo a `C:\instaladores\instalar_todo.ps1`.
+2. Abrir PowerShell con **Ejecutar como administrador** y ejecutar:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File C:\instaladores\instalar_todo.ps1
+   ```
+
+El script:
+
+1. instala Python 3.13, Java 17, Git y NSSM si faltan (descarga de los sitios oficiales);
+2. clona el repositorio en `C:\apps\thsa-api-server` (pide iniciar sesión en GitHub) o hace
+   `git pull` si ya está;
+3. crea el `.env`: **pide usuario y clave de Oracle** y completa el resto (`ENV=test`,
+   `JAVA_HOME`, base `192.168.16.248:1521:BASE`, esquema `SYSADMIN`, `JWT_SECRET` nuevo).
+   El `.env` queda legible solo por administradores y la cuenta del servicio;
+4. ejecuta `deploy\instalar_servidor.ps1` (dependencias, driver, prueba de Oracle, servicio,
+   firewall y `/health`);
+5. si no hay usuarios de la API, **pide nombre y clave** del primero.
+
+Se puede volver a ejecutar sin problemas: saltea lo que ya está hecho y no pisa el `.env`.
+Opciones: `-Simular` (muestra qué haría, sin tocar nada), `-Carpeta`, `-Puerto`,
+`-JdbcUrl`, `-Esquema`.
+
+Las secciones siguientes son el mismo proceso **paso a paso**, por si se prefiere hacerlo a
+mano o hay que diagnosticar un problema.
+
+---
+
 ## 1. Requisitos (una sola vez)
 
 En una consola de PowerShell **como administrador**. Si el servidor no tiene `winget`,
@@ -37,7 +71,43 @@ winget install -e --id Git.Git
 **NSSM** (administra el servicio): descargar NSSM 2.24 de <https://nssm.cc/download>,
 descomprimir y copiar `win64\nssm.exe` a `C:\nssm\nssm.exe`.
 
-Cerrar y volver a abrir la consola para que tome el `PATH` nuevo.
+**Sin `winget`** (habitual en Windows Server): este bloque baja los instaladores oficiales y
+los instala sin ventanas, NSSM incluido. Java queda en una ruta fija, que es la que va en
+`JAVA_HOME`.
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$ProgressPreference = 'SilentlyContinue'
+$tmp = "C:\instaladores"; New-Item -ItemType Directory -Force $tmp | Out-Null
+
+# Python 3.13 para todos los usuarios, con el PATH
+Invoke-WebRequest https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe -OutFile "$tmp\python.exe" -UseBasicParsing
+Start-Process "$tmp\python.exe" -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1 Include_launcher=1 Include_test=0' -Wait
+
+# Java 17 (JRE Temurin) en C:\Program Files\Eclipse Adoptium\jre-17
+Invoke-WebRequest "https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk" -OutFile "$tmp\java.msi" -UseBasicParsing
+Start-Process msiexec.exe -ArgumentList "/i `"$tmp\java.msi`" /quiet ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome INSTALLDIR=`"C:\Program Files\Eclipse Adoptium\jre-17`"" -Wait
+
+# Git (última versión de Git for Windows)
+$git = (Invoke-RestMethod https://api.github.com/repos/git-for-windows/git/releases/latest).assets | Where-Object name -match '^Git-[\d.]+-64-bit\.exe$' | Select-Object -First 1
+Invoke-WebRequest $git.browser_download_url -OutFile "$tmp\git.exe" -UseBasicParsing
+Start-Process "$tmp\git.exe" -ArgumentList '/VERYSILENT /NORESTART /NOCANCEL /SP- /SUPPRESSMSGBOXES' -Wait
+
+# NSSM 2.24 en C:\nssm\nssm.exe
+Invoke-WebRequest https://nssm.cc/release/nssm-2.24.zip -OutFile "$tmp\nssm.zip" -UseBasicParsing
+Expand-Archive "$tmp\nssm.zip" "$tmp\nssm" -Force
+New-Item -ItemType Directory -Force C:\nssm | Out-Null
+Copy-Item "$tmp\nssm\nssm-2.24\win64\nssm.exe" C:\nssm\nssm.exe -Force
+```
+
+Si el servidor no tiene salida a internet, bajar esos mismos archivos en otra PC, copiarlos a
+`C:\instaladores` del servidor y ejecutar solo las líneas `Start-Process` / `Copy-Item`.
+
+Cerrar y volver a abrir la consola para que tome el `PATH` nuevo, y comprobar:
+
+```powershell
+python --version; java -version; git --version; Test-Path C:\nssm\nssm.exe
+```
 
 ## 2. Bajar el código
 
@@ -64,7 +134,7 @@ Valores para el servidor de testing:
 |---|---|
 | `ENV` | `test` (deja `/docs` activo; `production` lo apaga) |
 | `DB_DRIVER` | `jdbc` |
-| `JAVA_HOME` | carpeta del JRE instalado, p. ej. `C:\Program Files\Eclipse Adoptium\jre-17.0.x-hotspot` |
+| `JAVA_HOME` | carpeta del JRE: `C:\Program Files\Eclipse Adoptium\jre-17` si se usó el bloque sin `winget`; con `winget`, `C:\Program Files\Eclipse Adoptium\jre-17.0.x-hotspot` |
 | `DB_JDBC_URL` | `jdbc:oracle:thin:@192.168.16.248:1521:BASE` |
 | `DB_USER` / `DB_PASSWORD` | usuario de la base (idealmente `api_readonly`, ver `sql/setup.sql`) |
 | `VIEW_SCHEMA` | `SYSADMIN` |

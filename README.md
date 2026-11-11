@@ -333,9 +333,9 @@ En `postman/` está la colección `apis_server.postman_collection.json`. Para us
 
 ## Despliegue
 
-**Servidor de testing** (`192.168.16.39`, puerto 8001, servicio de Windows con NSSM): ver
-[docs/INSTALACION_SERVIDOR.md](docs/INSTALACION_SERVIDOR.md). Lo instala
-`deploy\instalar_servidor.ps1` y lo actualiza `deploy\actualizar_servidor.ps1`.
+**Servidor de testing** (`192.168.16.39`, puerto 8001, servicio de Windows con NSSM): se
+instala en un paso con `deploy\instalar_todo.ps1` y se actualiza con
+`deploy\actualizar_servidor.ps1`. Ver [docs/INSTALACION_SERVIDOR.md](docs/INSTALACION_SERVIDOR.md).
 
 **Producción** (pendiente). Además de lo anterior, falta:
 
